@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Web.Http;
+using System.Linq;
 
-namespace ReactAPI.Controllers
+namespace RESTfulApi.Controllers
 {
     public class HomeController : ApiController
     {
+        // NOT PRODUCTION WORTHY
         public static string dbConn = "Data Source=localhost; user id=appuser; password=app_password; initial catalog=app;";
 
         [HttpPost]
-        public int Register([FromBody] Member member)
+        public int Create([FromBody] Member member)
         {
             using (IDbConnection conn = new SqlConnection(dbConn))
             {
@@ -19,6 +21,7 @@ namespace ReactAPI.Controllers
 
                 using (var cmd = conn.CreateCommand())
                 {
+                    // NOT PRODUCTION WORTHY
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandText = "INSERT into person (FirstName, LastName) values ('" + member.FirstName + "', '" + member.LastName + "'); SELECT SCOPE_IDENTITY();";
                     return Convert.ToInt32(cmd.ExecuteScalar());
@@ -26,25 +29,8 @@ namespace ReactAPI.Controllers
             }
         }
 
-        [HttpPost]
-        public int EditMember([FromBody] Member member)
-        {            
-            using (IDbConnection conn = new SqlConnection(dbConn))
-            {
-                conn.Open();
-
-                using (var cmd = conn.CreateCommand())
-                {
-                    cmd.CommandType = CommandType.Text;
-                    cmd.CommandText = string.Format("UPDATE Person SET FirstName = '{0}', LastName = '{1}' WHERE Id = {2}",
-                        member.FirstName, member.LastName, member.Id);
-                    return cmd.ExecuteNonQuery();                   
-                }
-            }            
-        }
-
         [HttpGet]
-        public List<Member> GetMembers()
+        public List<Member> Get()
         {
             var members = new List<Member>();
 
@@ -53,6 +39,7 @@ namespace ReactAPI.Controllers
                 conn.Open();
                 using (var cmd = conn.CreateCommand())
                 {
+                    // NOT PRODUCTION WORTHY
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandText = "SELECT * FROM Person";
                     using (var reader = cmd.ExecuteReader())
@@ -74,39 +61,30 @@ namespace ReactAPI.Controllers
         }
 
         [HttpGet]
-        public Member GetMemberById(int id)
+        public Member Edit(int id)
         {
-            Member member = null;
+            return Get().Where(x => x.Id == id).First();
+        }
 
-            using (var conn = new SqlConnection(dbConn))
+        [HttpPost]
+        public void Edit(Member member)
+        {
+            using (IDbConnection conn = new SqlConnection(dbConn))
             {
                 conn.Open();
 
                 using (var cmd = conn.CreateCommand())
                 {
+                    // NOT PRODUCTION WORTHY
                     cmd.CommandType = CommandType.Text;
-                    cmd.CommandText = string.Format("SELECT * FROM Person WHERE ID = {0}", id);
-                    using (var reader = cmd.ExecuteReader())
-                    {
-                        if(reader.HasRows)
-                        {
-                            reader.Read();
-                            member = new Member()
-                            {
-                                Id = Convert.ToInt32(reader["Id"]),
-                                FirstName = Convert.ToString(reader["FirstName"]),
-                                LastName = Convert.ToString(reader["LastName"])
-                            };
-                        }
-                    }
+                    cmd.CommandText = "UPDATE person SET FirstName = '" + member.FirstName + "', LastName = '" + member.LastName + "' WHERE Id = " + member.Id;
+                    cmd.ExecuteScalar();
                 }
             }
-            
-            return member;
         }
 
         [HttpPost]
-        public void DeleteMember(Member member)
+        public void Delete(Member member)
         {
             if (member == null || member.Id == 0)
                 return;
@@ -117,6 +95,7 @@ namespace ReactAPI.Controllers
 
                 using (var cmd = conn.CreateCommand())
                 {
+                    // NOT PRODUCTION WORTHY
                     cmd.CommandType = CommandType.Text;
                     cmd.CommandText = "DELETE FROM person WHERE Id = " + member.Id;
                     cmd.ExecuteScalar();
